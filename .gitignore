@@ -6,12 +6,6 @@
 *.svg
 !/assets/*svg
 
-src/Parser/Lexer.hs
-src/Parser.hs
-src/Language/Lua/Parser/Lexer.hs
-src/Language/Lua/Parser/Parser.hs
-src/**/*.info
-
 !/tests/lua/*.lua
 !/tests/lua_parse/*.lua
 
