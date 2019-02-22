@@ -12,18 +12,18 @@ import Syntax
 unify :: Type -> Type -> TypingM ()
 unify (TyVar v) t =
   if (v `Set.member` ftv t) && (t /= TyVar v)
-     then throwError (occursError v t)
+     then throwError (OccursError v t)
      else extendSub $ singleton v t
 unify t (TyVar v) =
   if (v `Set.member` ftv t) && (t /= TyVar v)
-     then throwError (occursError v t)
+     then throwError (OccursError v t)
      else extendSub $ singleton v t
 unify (a :-> d) (a' :-> d') = do
   unify a a'
   join $
     unify <$> applySub d <*> applySub d'
 unify (TyCon v) (TyCon v') | v == v' = pure ()
-unify a b = throwError (notEqualError a b)
+unify a b = throwError (NotEqualError a b)
 
 mergeDelta :: Delta -> Delta -> TypingM Delta
 mergeDelta (Delta da) (Delta db) = Delta <$> Map.mergeA keep keep try da db where

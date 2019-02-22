@@ -1,25 +1,31 @@
 module Typing.Errors
-  ( TypeError
-  , occursError
-  , notEqualError
+  ( TypeError(..)
   , addMergeErrorCtx
+  , addErrorSpan
   ) where
 
 import Syntax
 
-newtype TypeError = TypeError String
+data TypeError
+  = OccursError Var Type
+  | NotEqualError Type Type
+  | MergeError Var TypeError
+  | SpannedError Span TypeError
 
 instance Show TypeError where
-  show (TypeError x) = x
+  show (OccursError v t) =
+    "Variable " ++ show v ++ " occurs in type " ++ show t
+  show (NotEqualError a b) =
+    "Types " ++ show a ++ " and " ++ show b ++ " aren't compatible"
+  show (MergeError v e) =
+    show e ++ "\nWhen merging type of " ++ show v
+  show (SpannedError s e) = show s ++ ": " ++ show e
 
-occursError :: Var -> Type -> TypeError
-occursError v t = TypeError $
-  "Variable " ++ show v ++ " occurs in type " ++ show t
-
-notEqualError :: Type -> Type -> TypeError
-notEqualError a b = TypeError $
-  "Types " ++ show a ++ " and " ++ show b ++ " aren't compatible"
 
 addMergeErrorCtx :: Var -> TypeError -> TypeError
-addMergeErrorCtx v (TypeError t) = TypeError $
-  unlines [ t, "When merging type of " ++ show v ]
+addMergeErrorCtx v (SpannedError s e) = SpannedError s $ addMergeErrorCtx v e
+addMergeErrorCtx v e = MergeError v e
+
+addErrorSpan :: Span -> TypeError -> TypeError
+addErrorSpan _ e@SpannedError{} = e
+addErrorSpan s e = SpannedError s e

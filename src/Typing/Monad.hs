@@ -71,8 +71,8 @@ runTyping env (TypingM k) =
     Right (x, _, _) -> pure x
 
 refresh :: Typing -> TypingM Typing
-refresh (Typing delta tau) = TypingM $ \vars _ sub ->
+refresh (Typing a delta tau) = TypingM $ \vars _ sub ->
   let tau_fv = Set.toList (ftv tau `Set.difference` foldMap ftv (getDelta delta))
       (used, vars') = splitAt (length tau_fv) vars
       sub' = substFromList (zip tau_fv (map TyVar used))
-   in pure (apply (sub <> sub') (delta ⊢ tau), vars', sub)
+   in pure (apply (sub <> sub') (Typing a delta tau), vars', sub)
