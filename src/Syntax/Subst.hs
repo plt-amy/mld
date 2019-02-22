@@ -37,6 +37,10 @@ instance HasSubst Typing where
   apply s (Typing a d t) = Typing a (apply s d) (apply s t)
   ftv (Typing _ d t) = ftv d <> ftv t
 
+instance HasSubst a => HasSubst (Spanned a) where
+  apply s (Spanned sp x) = Spanned sp (apply s x)
+  ftv (Spanned _ x) = ftv x
+
 singleton :: Var -> Type -> Subst
 singleton v t = Subst (Map.singleton v t)
 

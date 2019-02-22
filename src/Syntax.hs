@@ -8,6 +8,7 @@ module Syntax
   , Delta(..)
   , Typing(..)
   , Gamma(..)
+  , Spanned(..)
   , typedAs, (!), (\-), insertGamma
   , expAnn, withTypeAnn
   ) where
@@ -70,8 +71,19 @@ instance Show Exp where
 paren :: String -> String
 paren x = "(" ++ x ++ ")"
 
-newtype Delta = Delta { getDelta :: Map.Map Var Type }
+newtype Delta = Delta { getDelta :: Map.Map Var (Spanned Type) }
   deriving (Eq, Ord, Semigroup, Monoid)
+
+data Spanned a = Spanned Span a
+
+instance Show a => Show (Spanned a) where
+  show (Spanned _ s) = show s
+
+instance Eq a => Eq (Spanned a) where
+  Spanned _ l == Spanned _ r = l == r
+
+instance Ord a => Ord (Spanned a) where
+  Spanned _ l `compare` Spanned _ r = l `compare` r
 
 instance Show Delta where
   show (Delta xs)
@@ -101,8 +113,8 @@ infixr 1 :->
 
 instance Show Type where
   show (TyVar (Var v)) = v
-  show (TyCon (Var v)) = v
-  show (l :-> t) = l' ++ " -> " ++ show t where
+  show (TyCon (Var v)) = "\x1b[1;34m" ++ v ++ "\x1b[0m"
+  show (l :-> t) = l' ++ " \x1b[1;35m->\x1b[0m " ++ show t where
     l' = case l of
       (:->){} -> paren (show l)
       _ -> show l
@@ -119,10 +131,10 @@ instance Show Typing where
 withTypeAnn :: Span -> Typing -> Typing
 withTypeAnn a t = t { typingAnn = Just a }
 
-typedAs :: Var -> Type -> Delta
-typedAs v t = Delta (Map.singleton v t)
+typedAs :: Var -> Span -> Type -> Delta
+typedAs v s t = Delta (Map.singleton v (Spanned s t))
 
-(!) :: Delta -> Var -> Maybe Type
+(!) :: Delta -> Var -> Maybe (Spanned Type)
 Delta m ! v = Map.lookup v m
 
 (\-) :: Delta -> Var -> Delta

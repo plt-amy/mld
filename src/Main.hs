@@ -12,8 +12,6 @@ import Typing.Monad
 import Typing.Errors
 import Typing
 
-import Data.Char
-
 realise :: String -> Either (Either ParseError TypeError) Typing
 realise code = do
   expr <- mapLeft Left (parser code)
@@ -24,6 +22,8 @@ demonstration =
   Gamma . Map.fromList $
     [ (Var "add", poly $ "Num" :-> "Num" :-> "Num")
     , (Var "if", poly $ "Bool" :-> "a" :-> "a" :-> "a")
+    , (Var "true", poly "Bool")
+    , (Var "false", poly "Bool")
     ]
   where poly = Typing Nothing mempty
 
@@ -45,7 +45,5 @@ main = runInputT defaultSettings loop where
   interp :: String -> IO ()
   interp s =
     case realise s of
-      Left e ->
-        let print' = putStrLn . reverse . dropWhile isSpace . reverse . show
-         in either print print' e
+      Left e -> either print (putStrLn . showError s) e
       Right x -> print x

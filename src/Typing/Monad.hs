@@ -58,7 +58,7 @@ getTyping :: Var -> TypingM (Maybe Typing)
 getTyping v = TypingM $ \vars (Gamma env) sub -> pure (Map.lookup v env, vars, sub)
 
 instance MonadError TypeError TypingM where
-  throwError e = TypingM $ \_ _ _ -> Left e
+  throwError e = TypingM $ \_ _ sub -> Left (apply sub e)
   catchError (TypingM k) catch = TypingM $ \vars gamma sub ->
     case k vars gamma sub of
       Left e -> runM (catch e) vars gamma sub
@@ -70,9 +70,9 @@ runTyping env (TypingM k) =
     Left e -> Left e
     Right (x, _, _) -> pure x
 
-refresh :: Typing -> TypingM Typing
-refresh (Typing a delta tau) = TypingM $ \vars _ sub ->
+refresh :: Span -> Typing -> TypingM Typing
+refresh a (Typing _ delta tau) = TypingM $ \vars _ sub ->
   let tau_fv = Set.toList (ftv tau `Set.difference` foldMap ftv (getDelta delta))
       (used, vars') = splitAt (length tau_fv) vars
       sub' = substFromList (zip tau_fv (map TyVar used))
-   in pure (apply (sub <> sub') (Typing a delta tau), vars', sub)
+   in pure (apply (sub <> sub') (Typing (Just a) delta tau), vars', sub)
