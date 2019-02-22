@@ -22,7 +22,7 @@ realise code = do
 demonstration :: Gamma
 demonstration =
   Gamma . Map.fromList $
-    [ (Var "add", poly $ "Int" :-> "Int" :-> "Int")
+    [ (Var "add", poly $ "Num" :-> "Num" :-> "Num")
     , (Var "if", poly $ "Bool" :-> "a" :-> "a" :-> "a")
     ]
   where poly = Typing Nothing mempty
