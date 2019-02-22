@@ -17,9 +17,7 @@ import Data.Char
 realise :: String -> Either (Either ParseError TypeError) Typing
 realise code = do
   expr <- mapLeft Left (parser code)
-  ty <-
-    mapLeft Right (runTyping demonstration (infer expr))
-  pure ty
+  mapLeft Right (runTyping demonstration (infer expr))
 
 demonstration :: Gamma
 demonstration =
@@ -27,7 +25,7 @@ demonstration =
     [ (Var "add", poly $ "Int" :-> "Int" :-> "Int")
     , (Var "if", poly $ "Bool" :-> "a" :-> "a" :-> "a")
     ]
-  where poly = Typing mempty
+  where poly = Typing Nothing mempty
 
 mapLeft :: (a -> b) -> Either a c -> Either b c
 mapLeft f = either (Left . f) Right
@@ -47,8 +45,7 @@ main = runInputT defaultSettings loop where
   interp :: String -> IO ()
   interp s =
     case realise s of
-      Left e -> 
+      Left e ->
         let print' = putStrLn . reverse . dropWhile isSpace . reverse . show
          in either print print' e
       Right x -> print x
-

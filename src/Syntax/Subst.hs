@@ -30,12 +30,12 @@ instance HasSubst Delta where
   ftv (Delta e) = foldMap ftv e
 
 instance HasSubst a => HasSubst [a] where
-  apply s = map (apply s) 
+  apply s = map (apply s)
   ftv = foldMap ftv
 
 instance HasSubst Typing where
-  apply s (Typing d t) = Typing (apply s d) (apply s t)
-  ftv (Typing d t) = ftv d <> ftv t
+  apply s (Typing a d t) = Typing a (apply s d) (apply s t)
+  ftv (Typing _ d t) = ftv d <> ftv t
 
 singleton :: Var -> Type -> Subst
 singleton v t = Subst (Map.singleton v t)

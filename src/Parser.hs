@@ -1,4 +1,7 @@
-module Parser (parser, ParseError) where
+module Parser
+  ( parser
+  , ParseError
+  , Span) where
 
 import qualified Text.Parsec.Token as Tok
 import Text.Parsec.Language
@@ -15,29 +18,41 @@ parser = parse expr "<input>" where
                            Tok.reservedNames = names,
                            Tok.commentLine = "#" }
 
-  lambda = do
+  positioned ps = do
+    s <- getPosition
+    x <- ps
+    e <- getPosition
+    pure $ x (Span s e)
+
+  lambda = positioned $ do
     Tok.reserved lexer "fun"
     args <- many1 (Tok.identifier lexer)
     Tok.reservedOp lexer "->"
     body <- expr
-    return $ foldr Lam body (map Var args)
+    pure $ \p -> foldr (Lam p . Var) body args
 
-  let' = do
+  let' = positioned $ do
     Tok.reserved lexer "let"
     name <- Tok.identifier lexer
-    args <- many (Tok.identifier lexer)
-    Tok.reservedOp lexer "="
-    body <- flip (foldr Lam) (map Var args) <$> expr
+    body <- positioned $ do
+      args <- many (Tok.identifier lexer)
+      Tok.reservedOp lexer "="
+      body <- expr
+      pure $ \p -> foldr (Lam p . Var) body args
+
     Tok.reserved lexer "in"
-    Let (Var name, body) <$> expr
+    rest <- expr
+    pure $ \p -> Let p (Var name, body) rest
 
 
   term =  Tok.parens lexer expr
-      <|> (Use . Var <$> Tok.identifier lexer)
-      <|> (Num <$> Tok.natural lexer)
+      <|> positioned (flip Use . Var <$> Tok.identifier lexer)
+      <|> positioned (flip Num <$> Tok.natural lexer)
       <|> lambda
       <|> let'
 
   expr = do
     es <- many1 term
-    return (foldl1 App es)
+    return (foldl1 mkApp es)
+
+  mkApp l r = App (expAnn l <> expAnn r) l r
