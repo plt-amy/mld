@@ -21,7 +21,7 @@ infer' (Use a v) = do
     Just dt -> refresh dt
     Nothing -> do
       ty <- TyVar <$> newVar
-      pure $ v `typedAs` Typing a ty ty
+      pure $ Typing (Just a) (v `typedAs` ty) ty
 
 infer' (Lam a var body) = do
   Typing _ delta sigma <- infer body
@@ -29,7 +29,7 @@ infer' (Lam a var body) = do
     Just tau -> pure $ Typing (Just a) (delta \- var) (tau :-> sigma)
     Nothing -> do
       alpha <- TyVar <$> newVar
-      pure $ Typing a delta (alpha :-> sigma)
+      pure $ Typing (Just a) delta (alpha :-> sigma)
 
 infer' (App a fun arg) = do
   Typing _ fun_d fun_t <- infer fun
