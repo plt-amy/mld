@@ -45,8 +45,11 @@ infer (App a fun arg) = do
   applySub (Typing (Just a) delta alpha)
 
 infer (Let a (v, e) body) = do
-  dt <- reduce v <$> infer e
-  withTypeAnn a <$> local (insertGamma v dt) (infer body)
+  dt@(Typing _ let_d _) <- reduce v <$> infer e
+  Typing _ body_d tau <- local (insertGamma v dt) $
+    infer body
+  overall_d <- mergeDelta let_d body_d
+  pure (Typing (Just a) overall_d tau)
 
 infer (Num a _) = pure $ Typing (Just a) mempty (TyCon "Int")
 
