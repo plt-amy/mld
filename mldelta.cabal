@@ -20,10 +20,16 @@ executable mldelta
   main-is:             Main.hs
   other-modules:       Syntax
                      , Syntax.Subst
+
                      , Typing
                      , Typing.Monad
                      , Typing.Unify
                      , Typing.Errors
+
+                     , Closure.Lang
+                     , Closure.Convert
+                     , Closure.ToC
+
                      , Parser
   -- other-extensions:
   build-depends:       mtl

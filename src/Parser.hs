@@ -10,7 +10,7 @@ import Text.Parsec
 import Syntax
 
 parser :: String -> Either ParseError Exp
-parser = parse expr "<input>" where
+parser = parse (expr <* eof) "<input>" where
   lexer = Tok.makeTokenParser style where
     ops = ["->","\\","+","*","-","="]
     names = [ "fun", "let", "in" ]

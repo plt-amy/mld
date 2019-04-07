@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, TupleSections #-}
 module Main where
 
 import qualified Data.Map.Strict as Map
@@ -12,10 +12,14 @@ import Typing.Monad
 import Typing.Errors
 import Typing
 
-realise :: String -> Either (Either ParseError TypeError) Typing
+import Closure.Convert
+import Closure.ToC
+
+realise :: String -> Either (Either ParseError TypeError) (Exp, Typing)
 realise code = do
   expr <- mapLeft Left (parser code)
-  mapLeft Right (runTyping demonstration (infer expr))
+  mapLeft Right $
+    fmap (expr,) (runTyping demonstration (infer expr))
 
 demonstration :: Gamma
 demonstration =
@@ -46,4 +50,5 @@ main = runInputT defaultSettings loop where
   interp s =
     case realise s of
       Left e -> either print (putStrLn . showError s) e
-      Right x -> print x
+      Right (x, ty) ->
+        print ty *> putStrLn (progToC (closureConvert x))

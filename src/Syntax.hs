@@ -11,9 +11,14 @@ module Syntax
   , Spanned(..)
   , typedAs, (!), (\-), insertGamma
   , expAnn, withTypeAnn
+  , free, substitute
   ) where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
+
+import Data.Map (Map)
+import Data.Set (Set)
 
 import Data.List
 import Data.Char
@@ -71,7 +76,7 @@ instance Show Exp where
 paren :: String -> String
 paren x = "(" ++ x ++ ")"
 
-newtype Delta = Delta { getDelta :: Map.Map Var (Spanned Type) }
+newtype Delta = Delta { getDelta :: Map Var (Spanned Type) }
   deriving (Eq, Ord, Semigroup, Monoid)
 
 data Spanned a = Spanned Span a
@@ -94,7 +99,7 @@ instance Show Delta where
         (map (\(a, b) -> show a ++ " :: " ++ show b) (Map.toList xs))
    ++ " }"
 
-newtype Gamma = Gamma { getGamma :: Map.Map Var Typing }
+newtype Gamma = Gamma { getGamma :: Map Var Typing }
   deriving (Eq, Show, Ord, Semigroup, Monoid)
 
 data Type
@@ -127,6 +132,27 @@ data Typing
 
 instance Show Typing where
   show (Typing _ d t) = show d ++ " ⊢ " ++ show t
+
+free :: Exp -> Set Var
+free (Use _ v) = Set.singleton v
+free (Let _ (v, e) b) = Set.delete v (free e) <> free b
+free (Lam _ v b) = Set.delete v (free b)
+free (App _ f x) = free f <> free x
+free (Num _ _) = mempty
+
+substitute :: Map Var Exp -> Exp -> Exp
+substitute mp ex@(Use _ v)
+  | Just x <- Map.lookup v mp = x
+  | otherwise = ex
+
+substitute mp (Let an (v, e) b) =
+  Let an (v, substitute mp e) (substitute (Map.delete v mp) b)
+
+substitute mp (Lam an v b) =
+  Lam an v (substitute (Map.delete v mp) b)
+
+substitute mp (App an f x) = App an (substitute mp f) (substitute mp x)
+substitute _ x@(Num _ _) = x
 
 withTypeAnn :: Span -> Typing -> Typing
 withTypeAnn a t = t { typingAnn = Just a }
